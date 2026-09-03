@@ -46,15 +46,15 @@ const STOP_ICONS: Record<string, L.Icon> = {
 
 function FitBounds({ geometry }: { geometry?: [number, number][] }) {
   const map = useMap();
-  const fitted = useRef(false);
+  const prevGeometry = useRef<[number, number][] | undefined>(undefined);
 
   useEffect(() => {
-    if (geometry && geometry.length > 0 && !fitted.current) {
+    if (geometry && geometry.length > 0 && geometry !== prevGeometry.current) {
       const bounds = L.latLngBounds(
         geometry.map(([lat, lng]) => [lat, lng] as [number, number])
       );
       map.fitBounds(bounds, { padding: [40, 40] });
-      fitted.current = true;
+      prevGeometry.current = geometry;
     }
   }, [geometry, map]);
 

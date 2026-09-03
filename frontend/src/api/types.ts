@@ -1,8 +1,13 @@
 export interface DriverDetails {
   driver_name: string;
+  driver_number: string;
+  home_terminal: string;
   carrier_name: string;
   tractor_number: string;
   trailer_number: string;
+  shipper: string;
+  commodity: string;
+  load_number: string;
 }
 
 export interface TripRequest {

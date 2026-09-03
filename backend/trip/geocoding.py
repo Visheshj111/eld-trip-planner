@@ -1,10 +1,16 @@
 import hashlib
+import time
 import requests
 from django.conf import settings
 from django.core.cache import cache
 
 
 ORS_BASE_URL = "https://api.openrouteservice.org"
+NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org"
+NOMINATIM_HEADERS = {
+    "User-Agent": "ELD-Trip-Planner/1.0",
+    "Accept-Language": "en",
+}
 
 
 def _cache_key(prefix, value):
@@ -12,70 +18,56 @@ def _cache_key(prefix, value):
     return f"{prefix}:{h}"
 
 
-def _do_geocode(location_string):
+def _nominatim_search(query: str):
     response = requests.get(
-        f"{ORS_BASE_URL}/geocode/search",
+        f"{NOMINATIM_BASE_URL}/search",
         params={
-            "api_key": settings.ORS_API_KEY,
-            "text": location_string,
-            "size": 1,
+            "q": query,
+            "format": "json",
+            "limit": 1,
+            "countrycodes": "us",
+            "addressdetails": 1,
         },
+        headers=NOMINATIM_HEADERS,
         timeout=10,
     )
     response.raise_for_status()
-    data = response.json()
-    features = data.get("features", [])
-    if not features:
-        return None, None
-    return features[0]["geometry"]["coordinates"], features[0].get("properties", {})
+    results = response.json()
+    if not results:
+        return None
+    r = results[0]
+    return float(r["lat"]), float(r["lon"])
 
 
-def geocode(location_string):
+def geocode(location_string: str):
     key = _cache_key("geo", location_string)
     cached = cache.get(key)
     if cached is not None:
-        print(f"[GEOCODE] Cache hit for: {location_string}")
         return cached
 
-    print(f"[GEOCODE] Cache miss for: {location_string}, fetching from ORS...")
-
     parts = [p.strip() for p in location_string.split(",")]
-    expected_state = parts[-1].upper() if len(parts) >= 2 and len(parts[-1].strip()) == 2 else ""
-    name_tokens = parts[0].split() if len(parts) >= 2 else location_string.split()
-    
-    valid_coords = None
-    for i in range(len(name_tokens), 0, -1):
-        query_city = " ".join(name_tokens[:i])
-        query = f"{query_city}, {expected_state}" if expected_state else query_city
-        
-        coords, props = _do_geocode(query)
-        if not coords:
-            continue
-            
-        returned_state_a = props.get("region_a", "").upper()
-        returned_state = props.get("region", "").upper()
-        locality = props.get("locality", "").lower()
-        label = props.get("label", "").lower()
-        
-        state_match = True
-        if expected_state:
-            state_match = (expected_state == returned_state_a or expected_state == returned_state)
-            
-        city_match = False
-        original_lower = location_string.lower()
-        if locality and locality in original_lower:
-            city_match = True
-        elif query_city.lower() in locality or query_city.lower() in label:
-            city_match = True
-            
-        if state_match and city_match:
-            valid_coords = coords
-            break
-            
-    if not valid_coords:
-        raise ValueError(f"Could not confidently geocode location: {location_string}")
+    candidates = [location_string]
 
-    result = (valid_coords[1], valid_coords[0])
+    if len(parts) >= 2:
+        city_tokens = parts[0].split()
+        state = parts[-1].strip()
+        for n in range(len(city_tokens), 0, -1):
+            shorter = " ".join(city_tokens[:n])
+            q = f"{shorter}, {state}" if state else shorter
+            if q != location_string:
+                candidates.append(q)
+
+    result = None
+    for query in candidates:
+        coords = _nominatim_search(query)
+        if coords:
+            result = coords
+            break
+        time.sleep(1)
+
+    if result is None:
+        raise ValueError(f"Could not geocode location: {location_string!r}")
+
     cache.set(key, result, timeout=86400)
     return result
 
@@ -113,13 +105,10 @@ def get_route(coordinates_list):
 
     route_points = [[c[1], c[0]] for c in geometry_coords]
 
-    total_distance_miles = total_distance_m * 0.000621371
-    total_duration_hours = total_duration_s / 3600
-
     result = {
         "geometry": route_points,
-        "distance_miles": round(total_distance_miles, 1),
-        "duration_hours": round(total_duration_hours, 2),
+        "distance_miles": round(total_distance_m * 0.000621371, 1),
+        "duration_hours": round(total_duration_s / 3600, 2),
         "segments": segments,
     }
 
@@ -134,28 +123,25 @@ def reverse_geocode(lat, lng):
         return cached
 
     response = requests.get(
-        f"{ORS_BASE_URL}/geocode/reverse",
+        f"{NOMINATIM_BASE_URL}/reverse",
         params={
-            "api_key": settings.ORS_API_KEY,
-            "point.lat": lat,
-            "point.lon": lng,
-            "size": 1,
+            "lat": lat,
+            "lon": lng,
+            "format": "json",
+            "zoom": 10,
         },
+        headers=NOMINATIM_HEADERS,
         timeout=10,
     )
     response.raise_for_status()
     data = response.json()
 
-    features = data.get("features", [])
-    if not features:
-        return f"{lat:.4f}, {lng:.4f}"
+    addr = data.get("address", {})
+    city = addr.get("city") or addr.get("town") or addr.get("village") or ""
+    state = addr.get("state_code") or addr.get("state") or ""
 
-    props = features[0].get("properties", {})
-    city = props.get("locality", props.get("name", ""))
-    region = props.get("region_a", props.get("region", ""))
-
-    if city and region:
-        result = f"{city}, {region}"
+    if city and state:
+        result = f"{city}, {state}"
     elif city:
         result = city
     else:
@@ -169,9 +155,7 @@ def interpolate_point_on_route(geometry, total_distance_miles, target_mile):
     if not geometry or total_distance_miles <= 0:
         return geometry[0] if geometry else [0, 0]
 
-    fraction = target_mile / total_distance_miles
-    fraction = max(0, min(1, fraction))
-
+    fraction = max(0, min(1, target_mile / total_distance_miles))
     index = fraction * (len(geometry) - 1)
     lower = int(index)
     upper = min(lower + 1, len(geometry) - 1)

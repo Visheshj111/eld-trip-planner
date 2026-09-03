@@ -5,9 +5,11 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import InputAdornment from "@mui/material/InputAdornment";
 import CircularProgress from "@mui/material/CircularProgress";
-import Collapse from "@mui/material/Collapse";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
 import Divider from "@mui/material/Divider";
-import { MapPin, Zap, Navigation, Flag, User, ChevronDown, ChevronUp, Truck, Hash } from "lucide-react";
+import { MapPin, Zap, Navigation, Flag, User, ChevronDown, ChevronUp, Truck, Hash, Home, Package, FileText, ClipboardList, CheckCircle2 } from "lucide-react";
 import type { TripRequest, DriverDetails } from "../api/types";
 
 interface TripFormProps {
@@ -35,13 +37,22 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
   const [cycleHours, setCycleHours] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [driverOpen, setDriverOpen] = useState(false);
+  const [expandedPanel, setExpandedPanel] = useState<string>("route");
+
   const [driverName, setDriverName] = useState("");
+  const [driverNumber, setDriverNumber] = useState("");
+  const [homeTerminal, setHomeTerminal] = useState("");
+
   const [carrierName, setCarrierName] = useState("");
   const [tractorNumber, setTractorNumber] = useState("");
   const [trailerNumber, setTrailerNumber] = useState("");
 
-  const hasDriverInfo = !!(driverName || carrierName || tractorNumber || trailerNumber);
+  const [shipper, setShipper] = useState("");
+  const [commodity, setCommodity] = useState("");
+  const [loadNumber, setLoadNumber] = useState("");
+
+  const hasRouteInfo = !!(currentLocation && pickupLocation && dropoffLocation && cycleHours);
+  const hasDriverInfo = !!(driverName || driverNumber || homeTerminal || carrierName || tractorNumber || trailerNumber || shipper || commodity || loadNumber);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -62,9 +73,14 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
 
     const driver_details: DriverDetails = {
       driver_name: driverName.trim(),
+      driver_number: driverNumber.trim(),
+      home_terminal: homeTerminal.trim(),
       carrier_name: carrierName.trim(),
       tractor_number: tractorNumber.trim(),
       trailer_number: trailerNumber.trim(),
+      shipper: shipper.trim(),
+      commodity: commodity.trim(),
+      load_number: loadNumber.trim(),
     };
 
     onSubmit({
@@ -81,22 +97,41 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
     setPickupLocation("Chicago, IL");
     setDropoffLocation("Dallas, TX");
     setCycleHours("42.5");
-    setDriverName("Marcus J. Wheeler");
-    setCarrierName("NorthStar Freight Co.");
-    setTractorNumber("4821-A");
-    setTrailerNumber("TRL-9042");
-    setDriverOpen(true);
+    
+    setDriverName("Yosef Smith");
+    setDriverNumber("1224213");
+    setHomeTerminal("Green Bay, WI");
+    
+    setCarrierName("Schneider National Carriers, Inc.");
+    setTractorNumber("48872");
+    setTrailerNumber("TA939200");
+    
+    setShipper("Don's Paper Co.");
+    setCommodity("Paper products");
+    setLoadNumber("ST13241564114");
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
 
-      {/* ── Route Locations ─────────────────────────────────── */}
-      <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* Connector line */}
+      <Accordion 
+        expanded={expandedPanel === "route"} 
+        onChange={(e, isExpanded) => setExpandedPanel(isExpanded ? "route" : "")}
+        elevation={0}
+        sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" }, borderRadius: "12px !important" }}
+      >
+        <AccordionSummary expandIcon={<ChevronDown size={20} />}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography sx={{ fontSize: "1rem", fontWeight: 700, color: "text.primary" }}>Plan a compliant run</Typography>
+            {hasRouteInfo && expandedPanel !== "route" && (
+              <CheckCircle2 size={16} color="#10B981" />
+            )}
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ pt: 0 }}>
+          <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 2 }}>
         <Box sx={{ position: "absolute", left: 15, top: 24, bottom: 24, width: 2, bgcolor: "divider", zIndex: 0 }} />
 
-        {/* Current Location */}
         <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
           <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: "primary.light", color: "primary.main" }}>
             <Navigation size={16} />
@@ -116,7 +151,6 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
           </Box>
         </Box>
 
-        {/* Pickup Location */}
         <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
           <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: "#D1FAE5", color: "#10B981" }}>
             <MapPin size={16} />
@@ -136,7 +170,6 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
           </Box>
         </Box>
 
-        {/* Dropoff Location */}
         <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
           <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: "#FEE2E2", color: "#EF4444" }}>
             <Flag size={16} />
@@ -155,9 +188,50 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
             />
           </Box>
         </Box>
-      </Box>
+          </Box>
+        </AccordionDetails>
+      </Accordion>
 
-      {/* ── Cycle Hours ─────────────────────────────────────── */}
+      <Accordion 
+        expanded={expandedPanel === "details"} 
+        onChange={(e, isExpanded) => setExpandedPanel(isExpanded ? "details" : "")}
+        elevation={0}
+        sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" }, borderRadius: "12px !important" }}
+      >
+        <AccordionSummary expandIcon={<ChevronDown size={20} />}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography sx={{ fontSize: "1rem", fontWeight: 700, color: "text.primary" }}>Log Sheet Details</Typography>
+            {hasDriverInfo && expandedPanel !== "details" && (
+              <CheckCircle2 size={16} color="#10B981" />
+            )}
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ pt: 0 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <TextField label="Driver Name" value={driverName} onChange={(e) => setDriverName(e.target.value)} placeholder="Full name" fullWidth size="small" variant="filled" />
+              <TextField label="Driver ID" value={driverNumber} onChange={(e) => setDriverNumber(e.target.value)} placeholder="e.g. 1224213" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "monospace" } } }} />
+            </Box>
+            
+            <TextField label="Main Office / Home Terminal" value={homeTerminal} onChange={(e) => setHomeTerminal(e.target.value)} placeholder="e.g. Green Bay, WI" fullWidth size="small" variant="filled" />
+
+            <TextField label="Carrier Name" value={carrierName} onChange={(e) => setCarrierName(e.target.value)} placeholder="e.g. Schneider National Carriers, Inc." fullWidth size="small" variant="filled" />
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <TextField label="Tractor Unit #" value={tractorNumber} onChange={(e) => setTractorNumber(e.target.value)} placeholder="e.g. 48872" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "monospace" } } }} />
+              <TextField label="Trailer Unit #" value={trailerNumber} onChange={(e) => setTrailerNumber(e.target.value)} placeholder="e.g. TA939200" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "monospace" } } }} />
+            </Box>
+
+            <TextField label="Shipper" value={shipper} onChange={(e) => setShipper(e.target.value)} placeholder="e.g. Don's Paper Co." fullWidth size="small" variant="filled" />
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <TextField label="Commodity" value={commodity} onChange={(e) => setCommodity(e.target.value)} placeholder="e.g. Paper products" fullWidth size="small" variant="filled" />
+              <TextField label="Load Number" value={loadNumber} onChange={(e) => setLoadNumber(e.target.value)} placeholder="e.g. ST13241564114" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "monospace" } } }} />
+            </Box>
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
       <Box sx={{ border: 1, borderColor: "divider", borderRadius: 2, p: 2, bgcolor: "secondary.light" }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
           <Box>
@@ -201,152 +275,6 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
         </Box>
       </Box>
 
-      {/* ── Driver Details (collapsible) ─────────────────────── */}
-      <Box
-        sx={{
-          border: 1,
-          borderColor: driverOpen ? "primary.main" : "divider",
-          borderRadius: 2,
-          overflow: "hidden",
-          transition: "border-color 0.2s ease",
-        }}
-      >
-        {/* Header toggle */}
-        <Box
-          onClick={() => setDriverOpen((o) => !o)}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            px: 2,
-            py: 1.25,
-            cursor: "pointer",
-            bgcolor: driverOpen ? "primary.main" : "secondary.light",
-            transition: "background-color 0.2s ease",
-            userSelect: "none",
-            "&:hover": { bgcolor: driverOpen ? "primary.dark" : "secondary.main" },
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <User size={15} color={driverOpen ? "#fff" : "#2563EB"} />
-            <Typography
-              sx={{
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                color: driverOpen ? "#fff" : "text.primary",
-                letterSpacing: "0.03em",
-              }}
-            >
-              Driver &amp; carrier details
-            </Typography>
-            {hasDriverInfo && !driverOpen && (
-              <Box
-                sx={{
-                  bgcolor: "primary.main",
-                  color: "#fff",
-                  borderRadius: "10px",
-                  px: 0.75,
-                  py: 0.1,
-                  fontSize: "0.6rem",
-                  fontWeight: 800,
-                  fontFamily: "monospace",
-                  lineHeight: 1.6,
-                }}
-              >
-                FILLED
-              </Box>
-            )}
-          </Box>
-          <Box sx={{ color: driverOpen ? "#fff" : "text.secondary", display: "flex" }}>
-            {driverOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </Box>
-        </Box>
-
-        <Collapse in={driverOpen}>
-          <Box sx={{ px: 2, py: 2, bgcolor: "background.paper", display: "flex", flexDirection: "column", gap: 2 }}>
-
-            {/* Driver Name + Carrier Name */}
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
-              <Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                  <User size={12} color="#64748B" />
-                  <Typography sx={{ ...FIELD_LABEL_SX, mb: 0 }}>Driver name</Typography>
-                </Box>
-                <TextField
-                  value={driverName}
-                  onChange={(e) => setDriverName(e.target.value)}
-                  placeholder="Full name"
-                  fullWidth
-                  size="small"
-                />
-              </Box>
-              <Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                  <Truck size={12} color="#64748B" />
-                  <Typography sx={{ ...FIELD_LABEL_SX, mb: 0 }}>Carrier name</Typography>
-                </Box>
-                <TextField
-                  value={carrierName}
-                  onChange={(e) => setCarrierName(e.target.value)}
-                  placeholder="Company name"
-                  fullWidth
-                  size="small"
-                />
-              </Box>
-            </Box>
-
-            <Divider sx={{ borderStyle: "dashed" }} />
-
-            {/* Tractor # + Trailer # */}
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
-              <Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                  <Hash size={12} color="#64748B" />
-                  <Typography sx={{ ...FIELD_LABEL_SX, mb: 0 }}>Tractor #</Typography>
-                </Box>
-                <TextField
-                  value={tractorNumber}
-                  onChange={(e) => setTractorNumber(e.target.value)}
-                  placeholder="e.g. 4821-A"
-                  fullWidth
-                  size="small"
-                  slotProps={{ input: { sx: { fontFamily: "monospace", fontWeight: 600, fontSize: "0.8125rem" } } }}
-                />
-              </Box>
-              <Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                  <Hash size={12} color="#64748B" />
-                  <Typography sx={{ ...FIELD_LABEL_SX, mb: 0 }}>Trailer #</Typography>
-                </Box>
-                <TextField
-                  value={trailerNumber}
-                  onChange={(e) => setTrailerNumber(e.target.value)}
-                  placeholder="e.g. TRL-9042"
-                  fullWidth
-                  size="small"
-                  slotProps={{ input: { sx: { fontFamily: "monospace", fontWeight: 600, fontSize: "0.8125rem" } } }}
-                />
-              </Box>
-            </Box>
-
-            <Box
-              sx={{
-                bgcolor: "#EFF6FF",
-                border: "1px solid #BFDBFE",
-                borderRadius: 1.5,
-                px: 1.5,
-                py: 1,
-              }}
-            >
-              <Typography sx={{ fontSize: "0.6875rem", color: "#1D4ED8", lineHeight: 1.5 }}>
-                These details will appear on every generated log sheet — leave blank to omit.
-              </Typography>
-            </Box>
-          </Box>
-        </Collapse>
-      </Box>
-
-      {/* ── Actions ─────────────────────────────────────────── */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
         <Button
           type="submit"

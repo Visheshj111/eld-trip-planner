@@ -30,10 +30,7 @@ FUEL_STOP_DURATION_MIN = 30
 DAY_MINUTES = 24 * 60
 DEFAULT_START_HOUR = 6
 
-def plan_trip(distance_miles, duration_hours, current_cycle_used, pickup_location, dropoff_location, pickup_mileage=0.0, start_hour=DEFAULT_START_HOUR):
-    avg_speed = distance_miles / duration_hours if duration_hours > 0 else 55.0
-    if avg_speed <= 0:
-        avg_speed = 55.0
+
 
 class HOSState:
     def __init__(self, start_time, current_cycle_used):
@@ -92,7 +89,8 @@ def plan_trip(distance_miles, duration_hours, current_cycle_used, pickup_locatio
             
         window_elapsed = state.current_time - state.window_start
         if WINDOW_LIMIT_MIN - window_elapsed < duration:
-            add_event("off_duty", REST_DURATION_MIN, "", "10-hour rest")
+            add_event("sleeper_berth", 8 * 60, "", "10-hour rest")
+            add_event("off_duty", 2 * 60, "", "")
             map_stops.append({"type": "rest", "mile": round(mile, 1), "label": "10-hour rest"})
             
         add_event("on_duty", duration, loc, note)
@@ -123,7 +121,8 @@ def plan_trip(distance_miles, duration_hours, current_cycle_used, pickup_locatio
             continue
 
         if drive_left_in_window <= 0 or time_left_in_window <= 0:
-            add_event("off_duty", REST_DURATION_MIN, "", "10-hour rest")
+            add_event("sleeper_berth", 8 * 60, "", "10-hour rest")
+            add_event("off_duty", 2 * 60, "", "")
             map_stops.append({"type": "rest", "mile": round(miles_covered, 1), "label": "10-hour rest"})
             continue
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
@@ -10,14 +10,16 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import { Truck, Bell, Download, RefreshCw, Shield, Layers, Expand, CheckCircle2 } from "lucide-react";
+import { Truck, Bell, Download, RefreshCw, Shield, Layers, Expand, CheckCircle2, Moon, Sun } from "lucide-react";
 import TripForm from "./components/TripForm";
 import RouteMap from "./components/RouteMap";
 import ELDLogSheet from "./components/ELDLogSheet";
 import { planTrip } from "./api/trip";
 import type { TripRequest, TripResponse, DriverDetails } from "./api/types";
+import { ThemeContext } from "./ThemeContext";
 
 export default function App() {
+  const { mode, toggleColorMode } = useContext(ThemeContext);
   const [result, setResult] = useState<TripResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,9 +83,9 @@ export default function App() {
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      mapContainerRef.current?.requestFullscreen().catch(() => {});
+      mapContainerRef.current?.requestFullscreen().catch(() => { });
     } else {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch(() => { });
     }
   };
 
@@ -109,6 +111,9 @@ export default function App() {
                 {driverDetails?.tractor_number ? ` · Unit ${driverDetails.tractor_number}` : ""}
               </Typography>
             </Box>
+            <IconButton onClick={toggleColorMode} sx={{ color: "text.primary" }}>
+              {mode === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </IconButton>
             <Box sx={{ height: 32, borderLeft: 1, borderColor: "divider" }} />
             <Button variant="outlined" color="inherit" startIcon={<Bell size={18} color="#2563EB" />} sx={{ borderColor: "divider", color: "text.primary" }}>
               2 alerts
