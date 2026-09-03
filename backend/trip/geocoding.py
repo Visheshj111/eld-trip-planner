@@ -34,7 +34,10 @@ def geocode(location_string):
     key = _cache_key("geo", location_string)
     cached = cache.get(key)
     if cached is not None:
+        print(f"[GEOCODE] Cache hit for: {location_string}")
         return cached
+
+    print(f"[GEOCODE] Cache miss for: {location_string}, fetching from ORS...")
 
     parts = [p.strip() for p in location_string.split(",")]
     expected_state = parts[-1].upper() if len(parts) >= 2 and len(parts[-1].strip()) == 2 else ""

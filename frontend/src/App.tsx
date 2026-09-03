@@ -15,14 +15,15 @@ import TripForm from "./components/TripForm";
 import RouteMap from "./components/RouteMap";
 import ELDLogSheet from "./components/ELDLogSheet";
 import { planTrip } from "./api/trip";
-import type { TripRequest, TripResponse } from "./api/types";
+import type { TripRequest, TripResponse, DriverDetails } from "./api/types";
 
 export default function App() {
   const [result, setResult] = useState<TripResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentDay, setCurrentDay] = useState(0);
-  
+  const [driverDetails, setDriverDetails] = useState<DriverDetails | undefined>(undefined);
+
   const [initialLocation, setInitialLocation] = useState<[number, number] | null>(null);
   const [mapLayer, setMapLayer] = useState<"osm" | "satellite" | "terrain">("osm");
   const [layerAnchor, setLayerAnchor] = useState<null | HTMLElement>(null);
@@ -45,7 +46,7 @@ export default function App() {
     }
   }, []);
 
-  const estimatedEtaDays = result ? Math.ceil(result.route.duration_hours / 11) : 0;
+  const estimatedEtaDays = result ? result.daily_logs.length : 0;
   const estimatedStops = result ? result.route.stops.length : 0;
 
   const handleSubmit = async (data: TripRequest) => {
@@ -53,6 +54,7 @@ export default function App() {
     setError(null);
     setResult(null);
     setCurrentDay(0);
+    setDriverDetails(data.driver_details);
 
     try {
       const response = await planTrip(data);
@@ -87,6 +89,7 @@ export default function App() {
 
   return (
     <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", display: "flex", flexDirection: "column" }}>
+
       <Box component="header" sx={{ borderBottom: 1, borderColor: "divider", bgcolor: "background.paper", px: { xs: 2, lg: 3 }, py: 1.5 }}>
         <Container maxWidth={false} sx={{ maxWidth: 1600, mx: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", px: "0 !important" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -101,7 +104,10 @@ export default function App() {
           <Box sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center", gap: 3 }}>
             <Box sx={{ textAlign: "right" }}>
               <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "text.secondary" }}>Driver</Typography>
-              <Typography sx={{ fontSize: "0.875rem", fontWeight: 600 }}>Maya Chen · Unit 4821</Typography>
+              <Typography sx={{ fontSize: "0.875rem", fontWeight: 600 }}>
+                {driverDetails?.driver_name || "Driver"}
+                {driverDetails?.tractor_number ? ` · Unit ${driverDetails.tractor_number}` : ""}
+              </Typography>
             </Box>
             <Box sx={{ height: 32, borderLeft: 1, borderColor: "divider" }} />
             <Button variant="outlined" color="inherit" startIcon={<Bell size={18} color="#2563EB" />} sx={{ borderColor: "divider", color: "text.primary" }}>
@@ -114,24 +120,123 @@ export default function App() {
         </Container>
       </Box>
 
-      <Container component="main" maxWidth={false} sx={{ maxWidth: 1600, mx: "auto", flex: 1, display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 3, p: { xs: 2, lg: 3 }, px: "16px !important" }}>
-        
-        <Box component="aside" sx={{ width: { xs: "100%", lg: 340 }, flexShrink: 0, display: "flex", flexDirection: "column", gap: 2.5 }}>
-          
-          <Card sx={{ p: 2, borderRadius: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2.5 }}>
-              <Box>
-                <Typography sx={{ fontFamily: "monospace", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "primary.main" }}>Route parameters</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700, mt: 0.5 }}>Plan a compliant run</Typography>
+      <Container component="main" maxWidth={false} sx={{ maxWidth: 1600, mx: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 3, p: { xs: 2, lg: 3 }, px: "16px !important" }}>
+
+        {/* Top row: form sidebar + map — aligned to the same height */}
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 3, alignItems: "stretch" }}>
+
+          <Box sx={{ width: { xs: "100%", lg: 340 }, flexShrink: 0, display: "flex", flexDirection: "column" }}>
+            <Card sx={{ p: 2, borderRadius: 3, flex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2.5 }}>
+                <Box>
+                  <Typography sx={{ fontFamily: "monospace", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "primary.main" }}>Route parameters</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, mt: 0.5 }}>Plan a compliant run</Typography>
+                </Box>
+                <IconButton onClick={handleReset} sx={{ bgcolor: "secondary.main", borderRadius: 2 }}>
+                  <RefreshCw size={18} color="#2563EB" />
+                </IconButton>
               </Box>
-              <IconButton onClick={handleReset} sx={{ bgcolor: "secondary.main", borderRadius: 2 }}>
-                <RefreshCw size={18} color="#2563EB" />
-              </IconButton>
+              <TripForm onSubmit={handleSubmit} loading={loading} />
+            </Card>
+          </Box>
+
+          <Card sx={{ flex: 1, borderRadius: 3, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", gap: 1.5, borderBottom: 1, borderColor: "divider", px: 2, py: 1.5, alignItems: { sm: "center" }, flexShrink: 0 }}>
+              <Box>
+                <Typography sx={{ fontFamily: "monospace", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "primary.main" }}>
+                  {result ? `Active route · ${result.route.distance_miles.toFixed(1)} mi` : "Route map"}
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5, fontSize: "1.125rem" }}>
+                  {result ? "Route plotted successfully" : "Awaiting destination"}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Button variant="outlined" color="inherit" onClick={(e) => setLayerAnchor(e.currentTarget)} startIcon={<Layers size={16} />} sx={{ borderColor: "divider", color: "text.primary" }}>
+                  Map layers
+                </Button>
+                <Menu anchorEl={layerAnchor} open={Boolean(layerAnchor)} onClose={() => setLayerAnchor(null)}>
+                  <MenuItem onClick={() => { setMapLayer("osm"); setLayerAnchor(null); }}>Standard (OSM)</MenuItem>
+                  <MenuItem onClick={() => { setMapLayer("satellite"); setLayerAnchor(null); }}>Satellite</MenuItem>
+                  <MenuItem onClick={() => { setMapLayer("terrain"); setLayerAnchor(null); }}>Terrain</MenuItem>
+                </Menu>
+                <IconButton onClick={toggleFullscreen} sx={{ border: 1, borderColor: "divider", borderRadius: 2, height: 40, width: 40 }}>
+                  <Expand size={18} />
+                </IconButton>
+              </Box>
             </Box>
-            <TripForm onSubmit={handleSubmit} loading={loading} />
+            <Box ref={mapContainerRef} sx={{ flex: 1, minHeight: 300, bgcolor: "secondary.main", position: "relative" }}>
+              {loading ? (
+                <Skeleton variant="rectangular" width="100%" height="100%" animation="wave" />
+              ) : result ? (
+                <RouteMap route={result.route} layerType={mapLayer} />
+              ) : initialLocation ? (
+                <RouteMap initialLocation={initialLocation} layerType={mapLayer} />
+              ) : (
+                <Skeleton variant="rectangular" width="100%" height="100%" animation="wave" />
+              )}
+            </Box>
           </Card>
 
-          <Card sx={{ p: 2, borderRadius: 3 }}>
+        </Box>
+
+        {/* Daily Log — full width */}
+        <Card sx={{ borderRadius: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, borderBottom: 1, borderColor: "divider", p: 2, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+            <Box>
+              <Typography sx={{ fontFamily: "monospace", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "primary.main" }}>FMCSA daily log</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5, fontSize: "1.125rem" }}>
+                Duty status {result ? `· Day ${currentDay + 1} of ${result.daily_logs.length}` : ""}
+              </Typography>
+            </Box>
+            {result && result.daily_logs.length > 0 && (
+              <Box sx={{ display: "flex", overflowX: "auto", border: 1, borderColor: "divider", borderRadius: 2, p: 0.5, bgcolor: "background.paper" }}>
+                {result.daily_logs.map((_, idx) => (
+                  <Button
+                    key={idx}
+                    onClick={() => setCurrentDay(idx)}
+                    sx={{
+                      minWidth: "auto",
+                      px: 2,
+                      py: 0.5,
+                      fontFamily: "monospace",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      color: currentDay === idx ? "primary.contrastText" : "text.secondary",
+                      bgcolor: currentDay === idx ? "primary.main" : "transparent",
+                      "&:hover": { bgcolor: currentDay === idx ? "primary.dark" : "secondary.main" },
+                    }}
+                  >
+                    Day {idx + 1}
+                  </Button>
+                ))}
+              </Box>
+            )}
+          </Box>
+          <Box sx={{ p: 2 }} ref={resultsRef}>
+            {loading ? (
+              <Skeleton variant="rounded" height={300} animation="wave" />
+            ) : result ? (
+              <ELDLogSheet log={result.daily_logs[currentDay]} driverDetails={driverDetails} />
+            ) : (
+              <Box sx={{ opacity: 0.5, pointerEvents: "none", filter: "grayscale(100%)" }}>
+                <ELDLogSheet
+                  log={{
+                    day: 1,
+                    date_label: "Awaiting trip details",
+                    total_miles: 0,
+                    events: [],
+                    totals: { off_duty: 0, sleeper_berth: 0, driving: 0, on_duty: 0 }
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
+        </Card>
+
+        {/* Trip Economics + HOS Guardrails row */}
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, pb: 3 }}>
+
+          <Card sx={{ p: 2, borderRadius: 3, flex: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "1.125rem" }}>Trip economics</Typography>
               <Box sx={{ bgcolor: "#D1FAE5", color: "#059669", px: 1, py: 0.5, borderRadius: 4, fontFamily: "monospace", fontSize: "0.625rem", fontWeight: 700 }}>
@@ -174,28 +279,28 @@ export default function App() {
             </Box>
           </Card>
 
-          <Card sx={{ p: 2, borderRadius: 3 }}>
+          <Card sx={{ p: 2, borderRadius: 3, flex: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "1.125rem" }}>HOS guardrails</Typography>
               <Shield size={20} color="#10B981" />
             </Box>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               <Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", mb: 0.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
                   <Typography variant="body2" sx={{ fontSize: "0.75rem" }}>Driving window</Typography>
-                  {loading ? <Skeleton width={60} /> : <Typography sx={{ fontFamily: "monospace", fontWeight: 600, fontSize: "0.75rem" }}>{result ? (result.daily_logs[0]?.totals.driving.toFixed(1) || "0.0") : "0.0"}h / 11h</Typography>}
+                  {loading ? <Skeleton width={60} /> : <Typography sx={{ fontFamily: "monospace", fontWeight: 600, fontSize: "0.75rem" }}>{result ? Number((result.daily_logs[0]?.totals.driving || 0).toFixed(1)) : 0}h / 11h</Typography>}
                 </Box>
                 <Box sx={{ height: 6, bgcolor: "secondary.main", borderRadius: 3, overflow: "hidden" }}>
-                  {loading ? <Skeleton variant="rectangular" height="100%" /> : <Box sx={{ height: "100%", width: result ? `${(result.daily_logs[0]?.totals.driving / 11) * 100}%` : "0%", bgcolor: "#10B981", borderRadius: 3 }} />}
+                  {loading ? <Skeleton variant="rectangular" height="100%" /> : <Box sx={{ height: "100%", width: result ? `${Math.min(100, (result.daily_logs[0]?.totals.driving / 11) * 100)}%` : "0%", bgcolor: "#10B981", borderRadius: 3 }} />}
                 </Box>
               </Box>
               <Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", mb: 0.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
                   <Typography variant="body2" sx={{ fontSize: "0.75rem" }}>On-duty window</Typography>
-                  {loading ? <Skeleton width={60} /> : <Typography sx={{ fontFamily: "monospace", fontWeight: 600, fontSize: "0.75rem" }}>{result ? ((result.daily_logs[0]?.totals.driving + result.daily_logs[0]?.totals.on_duty).toFixed(1) || "0.0") : "0.0"}h / 14h</Typography>}
+                  {loading ? <Skeleton width={60} /> : <Typography sx={{ fontFamily: "monospace", fontWeight: 600, fontSize: "0.75rem" }}>{result ? Number(((result.daily_logs[0]?.totals.driving || 0) + (result.daily_logs[0]?.totals.on_duty || 0)).toFixed(1)) : 0}h / 14h</Typography>}
                 </Box>
                 <Box sx={{ height: 6, bgcolor: "secondary.main", borderRadius: 3, overflow: "hidden" }}>
-                  {loading ? <Skeleton variant="rectangular" height="100%" /> : <Box sx={{ height: "100%", width: result ? `${((result.daily_logs[0]?.totals.driving + result.daily_logs[0]?.totals.on_duty) / 14) * 100}%` : "0%", bgcolor: "primary.main", borderRadius: 3 }} />}
+                  {loading ? <Skeleton variant="rectangular" height="100%" /> : <Box sx={{ height: "100%", width: result ? `${Math.min(100, ((result.daily_logs[0]?.totals.driving + result.daily_logs[0]?.totals.on_duty) / 14) * 100)}%` : "0%", bgcolor: "primary.main", borderRadius: 3 }} />}
                 </Box>
               </Box>
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, bgcolor: "secondary.light", p: 1.5, borderRadius: 2, mt: 1 }}>
@@ -206,108 +311,9 @@ export default function App() {
               </Box>
             </Box>
           </Card>
+
         </Box>
 
-        <Box component="section" sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
-          <Card sx={{ borderRadius: 3, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", gap: 1.5, borderBottom: 1, borderColor: "divider", px: 2, py: 1.5, alignItems: { sm: "center" } }}>
-              <Box>
-                <Typography sx={{ fontFamily: "monospace", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "primary.main" }}>
-                  {result ? `Active route · ${result.route.distance_miles.toFixed(1)} mi` : "Route map"}
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5, fontSize: "1.125rem" }}>
-                  {result ? "Route plotted successfully" : "Awaiting destination"}
-                </Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Button variant="outlined" color="inherit" onClick={(e) => setLayerAnchor(e.currentTarget)} startIcon={<Layers size={16} />} sx={{ borderColor: "divider", color: "text.primary" }}>
-                  Map layers
-                </Button>
-                <Menu anchorEl={layerAnchor} open={Boolean(layerAnchor)} onClose={() => setLayerAnchor(null)}>
-                  <MenuItem onClick={() => { setMapLayer("osm"); setLayerAnchor(null); }}>Standard (OSM)</MenuItem>
-                  <MenuItem onClick={() => { setMapLayer("satellite"); setLayerAnchor(null); }}>Satellite</MenuItem>
-                  <MenuItem onClick={() => { setMapLayer("terrain"); setLayerAnchor(null); }}>Terrain</MenuItem>
-                </Menu>
-                <IconButton onClick={toggleFullscreen} sx={{ border: 1, borderColor: "divider", borderRadius: 2, height: 40, width: 40 }}>
-                  <Expand size={18} />
-                </IconButton>
-              </Box>
-            </Box>
-            <Box ref={mapContainerRef} sx={{ height: 380, bgcolor: "secondary.main", position: "relative" }}>
-              {loading ? (
-                <Skeleton variant="rectangular" width="100%" height="100%" animation="wave" />
-              ) : result ? (
-                <RouteMap route={result.route} layerType={mapLayer} />
-              ) : initialLocation ? (
-                <RouteMap initialLocation={initialLocation} layerType={mapLayer} />
-              ) : (
-                <Skeleton variant="rectangular" width="100%" height="100%" animation="wave" />
-              )}
-            </Box>
-          </Card>
-
-          <Card sx={{ borderRadius: 3 }}>
-            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, borderBottom: 1, borderColor: "divider", p: 2, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
-              <Box>
-                <Typography sx={{ fontFamily: "monospace", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "primary.main" }}>FMCSA daily log</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5, fontSize: "1.125rem" }}>
-                  Duty status {result ? `· Day ${currentDay + 1} of ${result.daily_logs.length}` : ""}
-                </Typography>
-              </Box>
-              {result && result.daily_logs.length > 1 && (
-                <Box sx={{ display: "flex", overflowX: "auto", border: 1, borderColor: "divider", borderRadius: 2, p: 0.5, bgcolor: "background.paper" }}>
-                  {result.daily_logs.map((log, idx) => (
-                    <Button
-                      key={idx}
-                      onClick={() => setCurrentDay(idx)}
-                      sx={{
-                        minWidth: "auto",
-                        px: 2,
-                        py: 0.5,
-                        fontFamily: "monospace",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        color: currentDay === idx ? "primary.contrastText" : "text.secondary",
-                        bgcolor: currentDay === idx ? "primary.main" : "transparent",
-                        "&:hover": { bgcolor: currentDay === idx ? "primary.dark" : "secondary.main" },
-                      }}
-                    >
-                      Day {idx + 1}
-                    </Button>
-                  ))}
-                </Box>
-              )}
-            </Box>
-            
-            <Box sx={{ p: 2 }} ref={resultsRef}>
-              {loading ? (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5 }}>
-                    <Skeleton variant="rounded" height={80} animation="wave" />
-                    <Skeleton variant="rounded" height={80} animation="wave" />
-                    <Skeleton variant="rounded" height={80} animation="wave" />
-                    <Skeleton variant="rounded" height={80} animation="wave" />
-                  </Box>
-                  <Skeleton variant="rounded" height={300} animation="wave" />
-                </Box>
-              ) : result ? (
-                <ELDLogSheet log={result.daily_logs[currentDay]} />
-              ) : (
-                <Box sx={{ opacity: 0.5, pointerEvents: "none", filter: "grayscale(100%)" }}>
-                  <ELDLogSheet 
-                    log={{
-                      day: 1,
-                      date_label: "Awaiting trip details",
-                      total_miles: 0,
-                      events: [],
-                      totals: { off_duty: 0, sleeper_berth: 0, driving: 0, on_duty: 0 }
-                    }} 
-                  />
-                </Box>
-              )}
-            </Box>
-          </Card>
-        </Box>
       </Container>
 
       <Snackbar open={!!error} autoHideDuration={8000} onClose={() => setError(null)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>

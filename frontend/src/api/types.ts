@@ -1,8 +1,16 @@
+export interface DriverDetails {
+  driver_name: string;
+  carrier_name: string;
+  tractor_number: string;
+  trailer_number: string;
+}
+
 export interface TripRequest {
   current_location: string;
   pickup_location: string;
   dropoff_location: string;
   current_cycle_used: number;
+  driver_details?: DriverDetails;
 }
 
 export interface RouteStop {
