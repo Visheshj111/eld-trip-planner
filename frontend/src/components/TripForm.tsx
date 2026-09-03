@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useTheme } from "@mui/material/styles";
+import { useState, useEffect } from "react";
+import { useTheme, alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
@@ -10,12 +10,14 @@ import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Divider from "@mui/material/Divider";
-import { MapPin, Zap, Navigation, Flag, User, ChevronDown, ChevronUp, Truck, Hash, Home, Package, FileText, ClipboardList, CheckCircle2 } from "lucide-react";
+import { MapPin, Route, Navigation, Flag, User, ChevronDown, ChevronUp, Truck, Hash, Home, Package, FileText, ClipboardList, CheckCircle2 } from "lucide-react";
 import type { TripRequest, DriverDetails } from "../api/types";
 
 interface TripFormProps {
   onSubmit: (data: TripRequest) => void;
   loading: boolean;
+  onDriverChange?: (details: DriverDetails) => void;
+  spotlight?: boolean;
 }
 
 const FIELD_LABEL_SX = { fontSize: "0.75rem", fontWeight: 600, mb: 0.5 } as const;
@@ -32,7 +34,39 @@ const ICON_CIRCLE_BASE = {
   borderColor: "background.paper",
 } as const;
 
-export default function TripForm({ onSubmit, loading }: TripFormProps) {
+const LOADING_MESSAGES = [
+  "Fueling up the rig...",
+  "Checking tire pressure...",
+  "Recalculating route...",
+  "Consulting the atlas...",
+  "Finding the best truck stops...",
+  "Dodging weigh stations...",
+  "Brewing trucker coffee...",
+  "Tuning the CB radio...",
+  "Loading the trailer...",
+  "Securing the cargo...",
+  "Checking weather conditions...",
+  "Avoiding low bridges...",
+  "Negotiating with dispatch...",
+  "Warming up the diesel engine...",
+  "Plotting course...",
+  "Calculating hours of service...",
+  "Analyzing traffic patterns...",
+  "Finding overnight parking...",
+  "Mapping out the journey...",
+  "Checking for road closures...",
+  "Synchronizing logs...",
+  "Reviewing FMCSA regulations...",
+  "Preparing the manifest...",
+  "Optimizing fuel stops...",
+  "Getting the green light...",
+  "Doing the pre-trip inspection...",
+  "Navigating city streets...",
+  "Hitting the open road...",
+  "Blowing the air horn..."
+];
+
+export default function TripForm({ onSubmit, loading, onDriverChange, spotlight }: TripFormProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [currentLocation, setCurrentLocation] = useState("");
@@ -40,6 +74,24 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
   const [dropoffLocation, setDropoffLocation] = useState("");
   const [cycleHours, setCycleHours] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loadingText, setLoadingText] = useState(LOADING_MESSAGES[0]);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingText(LOADING_MESSAGES[0]);
+      return;
+    }
+    
+    let currentIndex = Math.floor(Math.random() * LOADING_MESSAGES.length);
+    setLoadingText(LOADING_MESSAGES[currentIndex]);
+    
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % LOADING_MESSAGES.length;
+      setLoadingText(LOADING_MESSAGES[currentIndex]);
+    }, 2500);
+    
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const [expandedPanel, setExpandedPanel] = useState<string>("route");
 
@@ -58,6 +110,25 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
   const hasRouteInfo = !!(currentLocation && pickupLocation && dropoffLocation && cycleHours);
   const hasDriverInfo = !!(driverName || driverNumber || homeTerminal || carrierName || tractorNumber || trailerNumber || shipper || commodity || loadNumber);
 
+  useEffect(() => {
+    onDriverChange?.({
+      driver_name: driverName,
+      driver_number: driverNumber,
+      home_terminal: homeTerminal,
+      carrier_name: carrierName,
+      tractor_number: tractorNumber,
+      trailer_number: trailerNumber,
+      shipper,
+      commodity,
+      load_number: loadNumber,
+    });
+  }, [driverName, driverNumber, homeTerminal, carrierName, tractorNumber, trailerNumber, shipper, commodity, loadNumber, onDriverChange]);
+
+  const primaryMain = theme.palette.primary.main;
+  const primaryMuted = alpha(theme.palette.primary.main, isDark ? 0.15 : 0.08);
+  const emerald = "#059669";
+  const emeraldBg = isDark ? "rgba(5, 150, 105, 0.2)" : "rgba(5, 150, 105, 0.08)";
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!currentLocation.trim()) newErrors.currentLocation = "Required";
@@ -73,7 +144,10 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate()) {
+      setExpandedPanel("route");
+      return;
+    }
 
     const driver_details: DriverDetails = {
       driver_name: driverName.trim(),
@@ -101,15 +175,15 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
     setPickupLocation("Chicago, IL");
     setDropoffLocation("Dallas, TX");
     setCycleHours("42.5");
-    
+
     setDriverName("Yosef Smith");
     setDriverNumber("1224213");
     setHomeTerminal("Green Bay, WI");
-    
+
     setCarrierName("Schneider National Carriers, Inc.");
     setTractorNumber("48872");
     setTrailerNumber("TA939200");
-    
+
     setShipper("Don's Paper Co.");
     setCommodity("Paper products");
     setLoadNumber("ST13241564114");
@@ -118,95 +192,95 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
 
-      <Accordion 
-        expanded={expandedPanel === "route"} 
+      <Accordion
+        expanded={expandedPanel === "route"}
         onChange={(e, isExpanded) => setExpandedPanel(isExpanded ? "route" : "")}
         elevation={0}
-        sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" }, borderRadius: "12px !important" }}
+        sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" }, borderRadius: "12px !important", transition: "border-color 0.2s ease", "&:hover": { borderColor: isDark ? "#44403C" : "#D6D3D1" } }}
       >
         <AccordionSummary expandIcon={<ChevronDown size={20} />}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography sx={{ fontSize: "1rem", fontWeight: 700, color: "text.primary" }}>Plan a compliant run</Typography>
+            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: "1rem", fontWeight: 700, color: "text.primary" }}>Plan a compliant run</Typography>
             {hasRouteInfo && expandedPanel !== "route" && (
-              <CheckCircle2 size={16} color="#10B981" />
+              <CheckCircle2 size={16} color={emerald} />
             )}
           </Box>
         </AccordionSummary>
         <AccordionDetails sx={{ pt: 0 }}>
           <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 2 }}>
-        <Box sx={{ position: "absolute", left: 15, top: 24, bottom: 24, width: 2, bgcolor: "divider", zIndex: 0 }} />
+            <Box sx={{ position: "absolute", left: 15, top: 24, bottom: 24, width: 2, bgcolor: "divider", zIndex: 0 }} />
 
-        <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
-          <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: isDark ? "rgba(59, 130, 246, 0.2)" : "primary.light", color: isDark ? "#60A5FA" : "primary.main" }}>
-            <Navigation size={16} />
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <Typography sx={FIELD_LABEL_SX}>Current location</Typography>
-            <TextField
-              value={currentLocation}
-              onChange={(e) => setCurrentLocation(e.target.value)}
-              placeholder="e.g. Gary, IN"
-              error={!!errors.currentLocation}
-              helperText={errors.currentLocation}
-              fullWidth
-              size="small"
-              sx={{ bgcolor: "background.paper" }}
-            />
-          </Box>
-        </Box>
+            <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
+              <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: primaryMuted, color: primaryMain }}>
+                <Navigation size={16} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={FIELD_LABEL_SX}>Current location</Typography>
+                <TextField
+                  value={currentLocation}
+                  onChange={(e) => setCurrentLocation(e.target.value)}
+                  placeholder="e.g. Gary, IN"
+                  error={!!errors.currentLocation}
+                  helperText={errors.currentLocation}
+                  fullWidth
+                  size="small"
+                  sx={{ bgcolor: "background.paper" }}
+                />
+              </Box>
+            </Box>
 
-        <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
-          <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: isDark ? "rgba(16, 185, 129, 0.2)" : "#D1FAE5", color: "#10B981" }}>
-            <MapPin size={16} />
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <Typography sx={FIELD_LABEL_SX}>Pickup location</Typography>
-            <TextField
-              value={pickupLocation}
-              onChange={(e) => setPickupLocation(e.target.value)}
-              placeholder="e.g. Chicago, IL"
-              error={!!errors.pickupLocation}
-              helperText={errors.pickupLocation}
-              fullWidth
-              size="small"
-              sx={{ bgcolor: "background.paper" }}
-            />
-          </Box>
-        </Box>
+            <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
+              <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: emeraldBg, color: emerald }}>
+                <MapPin size={16} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={FIELD_LABEL_SX}>Pickup location</Typography>
+                <TextField
+                  value={pickupLocation}
+                  onChange={(e) => setPickupLocation(e.target.value)}
+                  placeholder="e.g. Chicago, IL"
+                  error={!!errors.pickupLocation}
+                  helperText={errors.pickupLocation}
+                  fullWidth
+                  size="small"
+                  sx={{ bgcolor: "background.paper" }}
+                />
+              </Box>
+            </Box>
 
-        <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
-          <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEE2E2", color: "#EF4444" }}>
-            <Flag size={16} />
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <Typography sx={FIELD_LABEL_SX}>Dropoff location</Typography>
-            <TextField
-              value={dropoffLocation}
-              onChange={(e) => setDropoffLocation(e.target.value)}
-              placeholder="e.g. Dallas, TX"
-              error={!!errors.dropoffLocation}
-              helperText={errors.dropoffLocation}
-              fullWidth
-              size="small"
-              sx={{ bgcolor: "background.paper" }}
-            />
-          </Box>
-        </Box>
+            <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
+              <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: isDark ? "rgba(220, 38, 38, 0.2)" : "rgba(220, 38, 38, 0.08)", color: "#DC2626" }}>
+                <Flag size={16} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={FIELD_LABEL_SX}>Dropoff location</Typography>
+                <TextField
+                  value={dropoffLocation}
+                  onChange={(e) => setDropoffLocation(e.target.value)}
+                  placeholder="e.g. Dallas, TX"
+                  error={!!errors.dropoffLocation}
+                  helperText={errors.dropoffLocation}
+                  fullWidth
+                  size="small"
+                  sx={{ bgcolor: "background.paper" }}
+                />
+              </Box>
+            </Box>
           </Box>
         </AccordionDetails>
       </Accordion>
 
-      <Accordion 
-        expanded={expandedPanel === "details"} 
+      <Accordion
+        expanded={expandedPanel === "details"}
         onChange={(e, isExpanded) => setExpandedPanel(isExpanded ? "details" : "")}
         elevation={0}
-        sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" }, borderRadius: "12px !important" }}
+        sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" }, borderRadius: "12px !important", transition: "border-color 0.2s ease", "&:hover": { borderColor: isDark ? "#44403C" : "#D6D3D1" } }}
       >
         <AccordionSummary expandIcon={<ChevronDown size={20} />}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography sx={{ fontSize: "1rem", fontWeight: 700, color: "text.primary" }}>Log Sheet Details</Typography>
+            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: "1rem", fontWeight: 700, color: "text.primary" }}>Log Sheet Details</Typography>
             {hasDriverInfo && expandedPanel !== "details" && (
-              <CheckCircle2 size={16} color="#10B981" />
+              <CheckCircle2 size={16} color={emerald} />
             )}
           </Box>
         </AccordionSummary>
@@ -214,33 +288,33 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
               <TextField label="Driver Name" value={driverName} onChange={(e) => setDriverName(e.target.value)} placeholder="Full name" fullWidth size="small" variant="filled" />
-              <TextField label="Driver ID" value={driverNumber} onChange={(e) => setDriverNumber(e.target.value)} placeholder="e.g. 1224213" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "monospace" } } }} />
+              <TextField label="Driver ID" value={driverNumber} onChange={(e) => setDriverNumber(e.target.value)} placeholder="e.g. 1224213" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "'JetBrains Mono', monospace" } } }} />
             </Box>
-            
+
             <TextField label="Main Office / Home Terminal" value={homeTerminal} onChange={(e) => setHomeTerminal(e.target.value)} placeholder="e.g. Green Bay, WI" fullWidth size="small" variant="filled" />
 
             <TextField label="Carrier Name" value={carrierName} onChange={(e) => setCarrierName(e.target.value)} placeholder="e.g. Schneider National Carriers, Inc." fullWidth size="small" variant="filled" />
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-              <TextField label="Tractor Unit #" value={tractorNumber} onChange={(e) => setTractorNumber(e.target.value)} placeholder="e.g. 48872" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "monospace" } } }} />
-              <TextField label="Trailer Unit #" value={trailerNumber} onChange={(e) => setTrailerNumber(e.target.value)} placeholder="e.g. TA939200" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "monospace" } } }} />
+              <TextField label="Tractor Unit #" value={tractorNumber} onChange={(e) => setTractorNumber(e.target.value)} placeholder="e.g. 48872" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "'JetBrains Mono', monospace" } } }} />
+              <TextField label="Trailer Unit #" value={trailerNumber} onChange={(e) => setTrailerNumber(e.target.value)} placeholder="e.g. TA939200" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "'JetBrains Mono', monospace" } } }} />
             </Box>
 
             <TextField label="Shipper" value={shipper} onChange={(e) => setShipper(e.target.value)} placeholder="e.g. Don's Paper Co." fullWidth size="small" variant="filled" />
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
               <TextField label="Commodity" value={commodity} onChange={(e) => setCommodity(e.target.value)} placeholder="e.g. Paper products" fullWidth size="small" variant="filled" />
-              <TextField label="Load Number" value={loadNumber} onChange={(e) => setLoadNumber(e.target.value)} placeholder="e.g. ST13241564114" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "monospace" } } }} />
+              <TextField label="Load Number" value={loadNumber} onChange={(e) => setLoadNumber(e.target.value)} placeholder="e.g. ST13241564114" fullWidth size="small" variant="filled" slotProps={{ input: { sx: { fontFamily: "'JetBrains Mono', monospace" } } }} />
             </Box>
           </Box>
         </AccordionDetails>
       </Accordion>
 
-      <Box sx={{ border: 1, borderColor: "divider", borderRadius: 2, p: 2, bgcolor: "secondary.light" }}>
+      <Box sx={{ border: 1, borderColor: "divider", borderRadius: 3, p: 2, bgcolor: "secondary.light" }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700 }}>Current cycle used</Typography>
-            <Typography sx={{ fontSize: "0.6875rem", color: "text.secondary", mt: 0.25 }}>70 hr / 8 day window</Typography>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Outfit', sans-serif" }}>Current cycle used</Typography>
+            <Typography sx={{ fontSize: "0.6875rem", color: "text.secondary", mt: 0.25, fontFamily: "'JetBrains Mono', monospace" }}>70 hr / 8 day window</Typography>
           </Box>
           <TextField
             value={cycleHours}
@@ -251,13 +325,16 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
             size="small"
             type="number"
             sx={{
-              width: 100,
-              "& .MuiInputBase-root": { fontSize: "0.875rem", fontFamily: "monospace", fontWeight: 700, color: "primary.main", bgcolor: "background.paper" },
+              width: 120,
+              "& .MuiInputBase-root": { fontSize: "0.875rem", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "primary.main", bgcolor: "background.paper" },
               "& input": { textAlign: "right", padding: "6px 10px" },
+              "& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button": { WebkitAppearance: "none", margin: 0 },
+              "& input[type=number]": { MozAppearance: "textfield" },
             }}
             slotProps={{
               htmlInput: { step: "0.1", min: "0", max: "70" },
               input: {
+                sx: { bgcolor: primaryMuted, borderRadius: 2, color: primaryMain },
                 endAdornment: (
                   <InputAdornment position="end">
                     <Typography sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.secondary" }}>hr</Typography>
@@ -272,8 +349,9 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
             sx={{
               height: "100%",
               width: cycleHours ? `${Math.min(100, (parseFloat(cycleHours) / 70) * 100)}%` : "0%",
-              bgcolor: parseFloat(cycleHours) > 60 ? "#F59E0B" : "primary.main",
+              bgcolor: parseFloat(cycleHours) > 60 ? "#D97706" : "primary.main",
               transition: "width 0.3s ease, background-color 0.3s ease",
+              borderRadius: 3,
             }}
           />
         </Box>
@@ -281,19 +359,38 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
         <Button
+          id="plan-trip-btn"
           type="submit"
           variant="contained"
           fullWidth
           disabled={loading}
-          startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <Zap size={18} />}
-          sx={{ height: 48, fontWeight: 600, fontSize: "0.9375rem" }}
+          startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <Route size={18} />}
+          sx={{
+            position: "relative",
+            zIndex: spotlight ? 9999 : 1,
+            boxShadow: spotlight ? "0 0 0 9999px rgba(0,0,0,0.6)" : undefined,
+            height: 48,
+            fontWeight: 600,
+            fontSize: "0.9375rem",
+            fontFamily: "'Outfit', sans-serif",
+            background: loading ? undefined : primaryMain,
+            color: "primary.contrastText",
+            transition: "all 0.25s ease",
+            "&:hover": {
+              background: alpha(primaryMain, 0.9),
+              transform: "translateY(-2px)",
+            },
+            "&:active": {
+              transform: "translateY(0px)",
+            },
+          }}
         >
-          {loading ? "Generating…" : "Plan Trip"}
+          {loading ? loadingText : "Plan Trip"}
         </Button>
         <Button
           variant="text"
           onClick={fillTestValues}
-          sx={{ fontSize: "0.6875rem", color: "text.secondary", textTransform: "none" }}
+          sx={{ fontSize: "0.6875rem", color: "text.secondary", textTransform: "none", "&:hover": { color: "primary.main" } }}
         >
           Fill with test data
         </Button>

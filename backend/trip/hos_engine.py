@@ -9,6 +9,7 @@ class Event:
     location: str
     note: str
     is_continuation: bool = False
+    mile: float = 0.0
 
 @dataclass
 class DailyLog:
@@ -42,8 +43,8 @@ class HOSState:
         self.non_driving_streak = 0
         self.events = []
 
-    def add_event(self, status, duration, loc, note):
-        self.events.append(Event(self.current_time, self.current_time + duration, status, loc, note))
+    def add_event(self, status, duration, loc, note, mile=0.0):
+        self.events.append(Event(self.current_time, self.current_time + duration, status, loc, note, mile=mile))
         
         if status in ("on_duty", "driving"):
             self.cycle_used += duration
@@ -76,12 +77,12 @@ def plan_trip(distance_miles, duration_hours, current_cycle_used, pickup_locatio
     map_stops = []
     miles_covered = 0.0
 
-    def add_event(status, duration, loc, note):
-        state.add_event(status, duration, loc, note)
+    def add_event(status, duration, loc, note, mile=0.0):
+        state.add_event(status, duration, loc, note, mile=mile)
 
     def schedule_atomic_on_duty(duration, loc, note, stop_type, mile, label):
         if CYCLE_LIMIT_MIN - state.cycle_used < duration:
-            add_event("off_duty", RESTART_DURATION_MIN, "", "34-hour restart")
+            add_event("off_duty", RESTART_DURATION_MIN, "", "34-hour restart", mile=mile)
             map_stops.append({"type": "rest", "mile": round(mile, 1), "label": "34-hour restart"})
             
         if state.window_start < 0:
@@ -89,11 +90,11 @@ def plan_trip(distance_miles, duration_hours, current_cycle_used, pickup_locatio
             
         window_elapsed = state.current_time - state.window_start
         if WINDOW_LIMIT_MIN - window_elapsed < duration:
-            add_event("sleeper_berth", 8 * 60, "", "10-hour rest")
-            add_event("off_duty", 2 * 60, "", "")
+            add_event("sleeper_berth", 8 * 60, "", "10-hour rest", mile=mile)
+            add_event("off_duty", 2 * 60, "", "", mile=mile)
             map_stops.append({"type": "rest", "mile": round(mile, 1), "label": "10-hour rest"})
             
-        add_event("on_duty", duration, loc, note)
+        add_event("on_duty", duration, loc, note, mile=mile)
         map_stops.append({"type": stop_type, "mile": round(mile, 1), "label": label})
 
     next_pickup_target = pickup_mileage
@@ -116,18 +117,18 @@ def plan_trip(distance_miles, duration_hours, current_cycle_used, pickup_locatio
         cycle_drive_left = max(0, CYCLE_LIMIT_MIN - state.cycle_used)
 
         if cycle_drive_left <= 0:
-            add_event("off_duty", RESTART_DURATION_MIN, "", "34-hour restart")
+            add_event("off_duty", RESTART_DURATION_MIN, "", "34-hour restart", mile=miles_covered)
             map_stops.append({"type": "rest", "mile": round(miles_covered, 1), "label": "34-hour restart"})
             continue
 
         if drive_left_in_window <= 0 or time_left_in_window <= 0:
-            add_event("sleeper_berth", 8 * 60, "", "10-hour rest")
-            add_event("off_duty", 2 * 60, "", "")
+            add_event("sleeper_berth", 8 * 60, "", "10-hour rest", mile=miles_covered)
+            add_event("off_duty", 2 * 60, "", "10-hour rest", mile=miles_covered)
             map_stops.append({"type": "rest", "mile": round(miles_covered, 1), "label": "10-hour rest"})
             continue
 
         if time_to_break <= 0:
-            add_event("off_duty", BREAK_DURATION_MIN, "", "30-minute break")
+            add_event("off_duty", BREAK_DURATION_MIN, "", "30-minute break", mile=miles_covered)
             map_stops.append({"type": "rest", "mile": round(miles_covered, 1), "label": "30-minute break"})
             continue
 
@@ -207,7 +208,8 @@ def _split_into_daily_logs(events, total_distance, avg_speed):
                 status=event.status,
                 location=event.location,
                 note=event.note,
-                is_continuation=(clipped_start > event.start_minutes)
+                is_continuation=(clipped_start > event.start_minutes),
+                mile=event.mile
             ))
 
             if event.status == "driving":

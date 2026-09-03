@@ -59,6 +59,16 @@ class TripView(APIView):
                 "mile": stop["mile"],
                 "type": stop["type"],
             })
+        for log in daily_logs:
+            for e in log.events:
+                if not e.location and e.note in ("10-hour rest", "34-hour restart", "30-minute break"):
+                    try:
+                        point = interpolate_point_on_route(geometry, distance_miles, getattr(e, "mile", 0.0))
+                        loc_str = reverse_geocode(point[0], point[1])
+                        if loc_str:
+                            e.location = loc_str
+                    except Exception as err:
+                        print(f"Error reverse geocoding event at mile {getattr(e, 'mile', 0.0)}: {err}")
 
         response_data = {
             "route": {

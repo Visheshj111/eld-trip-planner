@@ -25,7 +25,6 @@ def _nominatim_search(query: str):
             "q": query,
             "format": "json",
             "limit": 1,
-            "countrycodes": "us",
             "addressdetails": 1,
         },
         headers=NOMINATIM_HEADERS,
@@ -117,7 +116,7 @@ def get_route(coordinates_list):
 
 
 def reverse_geocode(lat, lng):
-    key = _cache_key("revgeo", f"{lat:.4f},{lng:.4f}")
+    key = _cache_key("revgeo2", f"{lat:.4f},{lng:.4f}")
     cached = cache.get(key)
     if cached is not None:
         return cached
@@ -137,7 +136,18 @@ def reverse_geocode(lat, lng):
     data = response.json()
 
     addr = data.get("address", {})
-    city = addr.get("city") or addr.get("town") or addr.get("village") or ""
+    city = (
+        addr.get("city")
+        or addr.get("town")
+        or addr.get("village")
+        or addr.get("hamlet")
+        or addr.get("municipality")
+        or addr.get("county")
+        or ""
+    )
+    if city.endswith(" County"):
+        city = city[:-7]
+    
     state = addr.get("state_code") or addr.get("state") or ""
 
     if city and state:
