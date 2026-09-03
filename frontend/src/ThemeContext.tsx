@@ -1,5 +1,6 @@
-import React, { createContext, useState, useMemo, ReactNode } from "react";
-import { ThemeProvider } from "@mui/material/styles";
+import React, { createContext, useState, useMemo } from "react";
+import type { ReactNode } from "react";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { getDesignTokens } from "./theme";
 
 interface ThemeContextType {
@@ -19,7 +20,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     setMode((prev) => (prev === "light" ? "dark" : "light"));
   };
 
-  const theme = useMemo(() => getDesignTokens(mode), [mode]);
+  const theme = useMemo(() => createTheme(getDesignTokens(mode)), [mode]);
 
   return (
     <ThemeContext.Provider value={{ mode, toggleColorMode }}>

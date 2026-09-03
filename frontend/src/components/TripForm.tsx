@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
@@ -27,10 +28,13 @@ const ICON_CIRCLE_BASE = {
   justifyContent: "center",
   flexShrink: 0,
   mt: 0.5,
-  border: "2px solid white",
+  border: "2px solid",
+  borderColor: "background.paper",
 } as const;
 
 export default function TripForm({ onSubmit, loading }: TripFormProps) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [currentLocation, setCurrentLocation] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
   const [dropoffLocation, setDropoffLocation] = useState("");
@@ -133,7 +137,7 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
         <Box sx={{ position: "absolute", left: 15, top: 24, bottom: 24, width: 2, bgcolor: "divider", zIndex: 0 }} />
 
         <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
-          <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: "primary.light", color: "primary.main" }}>
+          <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: isDark ? "rgba(59, 130, 246, 0.2)" : "primary.light", color: isDark ? "#60A5FA" : "primary.main" }}>
             <Navigation size={16} />
           </Box>
           <Box sx={{ flex: 1 }}>
@@ -152,7 +156,7 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
         </Box>
 
         <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
-          <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: "#D1FAE5", color: "#10B981" }}>
+          <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: isDark ? "rgba(16, 185, 129, 0.2)" : "#D1FAE5", color: "#10B981" }}>
             <MapPin size={16} />
           </Box>
           <Box sx={{ flex: 1 }}>
@@ -171,7 +175,7 @@ export default function TripForm({ onSubmit, loading }: TripFormProps) {
         </Box>
 
         <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
-          <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: "#FEE2E2", color: "#EF4444" }}>
+          <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEE2E2", color: "#EF4444" }}>
             <Flag size={16} />
           </Box>
           <Box sx={{ flex: 1 }}>
