@@ -8,6 +8,7 @@ class Event:
     status: str
     location: str
     note: str
+    is_continuation: bool = False
 
 @dataclass
 class DailyLog:
@@ -207,6 +208,7 @@ def _split_into_daily_logs(events, total_distance, avg_speed):
                 status=event.status,
                 location=event.location,
                 note=event.note,
+                is_continuation=(clipped_start > event.start_minutes)
             ))
 
             if event.status == "driving":

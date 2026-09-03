@@ -79,6 +79,7 @@ class TripView(APIView):
                             "status": e.status,
                             "location": e.location,
                             "note": e.note,
+                            "is_continuation": getattr(e, "is_continuation", False),
                         }
                         for e in log.events
                     ],
