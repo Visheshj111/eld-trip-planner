@@ -24,7 +24,7 @@ interface ThemeContextType {
 
 export const ThemeContext = createContext<ThemeContextType>({
   mode: "light",
-  themeMode: "system",
+  themeMode: "light",
   setThemeMode: () => {},
   toggleColorMode: () => {},
   accentColor: "teal",
@@ -37,7 +37,7 @@ export const ThemeContext = createContext<ThemeContextType>({
 
 export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    return (localStorage.getItem("themeMode") as ThemeMode) || "system";
+    return (localStorage.getItem("themeMode") as ThemeMode) || "light";
   });
   const [accentColor, setAccentColor] = useState<AccentColor>(() => {
     return (localStorage.getItem("accentColor") as AccentColor) || "teal";

@@ -113,17 +113,17 @@ function CurrentLocationControl({ initialLocation }: { initialLocation?: [number
         onClick={() => map.flyTo(initialLocation, 13)}
         title="Go to Current Location"
         sx={{ 
-          bgcolor: "background.paper",
-          color: "text.primary",
+          bgcolor: "#fff",
+          color: "#444",
           border: "2px solid rgba(0,0,0,0.2)",
           backgroundClip: "padding-box",
           width: 34,
           height: 34,
           borderRadius: 1,
-          "&:hover": { bgcolor: "action.hover" }
+          "&:hover": { bgcolor: "#f4f4f4" }
         }}
       >
-        <LocateFixed size={18} />
+        <LocateFixed size={18} strokeWidth={2.5} />
       </IconButton>
     </Box>
   );
