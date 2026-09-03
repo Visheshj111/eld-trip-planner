@@ -176,17 +176,17 @@ export default function TripForm({ onSubmit, loading, onDriverChange, spotlight 
     setDropoffLocation("Dallas, TX");
     setCycleHours("42.5");
 
-    setDriverName("Yosef Smith");
-    setDriverNumber("1224213");
-    setHomeTerminal("Green Bay, WI");
+    setDriverName("Alex Rivera");
+    setDriverNumber("ID-99382");
+    setHomeTerminal("Omaha, NE");
 
-    setCarrierName("Schneider National Carriers, Inc.");
-    setTractorNumber("48872");
-    setTrailerNumber("TA939200");
+    setCarrierName("Horizon Freight LLC");
+    setTractorNumber("7734");
+    setTrailerNumber("HZ-4221");
 
-    setShipper("Don's Paper Co.");
-    setCommodity("Paper products");
-    setLoadNumber("ST13241564114");
+    setShipper("Acme Logistics");
+    setCommodity("Widgets and Gizmos");
+    setLoadNumber("LD-83921102");
   };
 
   return (

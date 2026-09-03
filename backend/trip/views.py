@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import api_view
 
 from .serializers import TripRequestSerializer
 from .geocoding import geocode, get_route, interpolate_point_on_route, reverse_geocode
@@ -106,4 +107,8 @@ def _minutes_to_hhmm(minutes):
     h = minutes // 60
     m = minutes % 60
     return f"{h:02d}:{m:02d}"
+
+@api_view(['GET'])
+def health_check(request):
+    return Response({"status": "ok"}, status=status.HTTP_200_OK)
 

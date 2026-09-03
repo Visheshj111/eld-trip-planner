@@ -154,7 +154,7 @@ export default function App() {
           </Box>
           <Box sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center", gap: 3 }}>
             {liveDriverDetails && Object.values(liveDriverDetails).some(v => v) && (
-              <Box sx={{ textAlign: "right" }}>
+              <Box sx={{ textAlign: "right", mr: 1 }}>
                 <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "text.secondary", fontFamily: "'JetBrains Mono', monospace" }}>Driver</Typography>
                 <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>
                   {liveDriverDetails.driver_name || "Driver"}
@@ -162,23 +162,14 @@ export default function App() {
                 </Typography>
               </Box>
             )}
-            <IconButton onClick={toggleColorMode} sx={{ color: "text.primary", transition: "transform 0.3s ease", "&:hover": { transform: "rotate(30deg)" } }}>
-              {mode === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-            </IconButton>
-            <IconButton onClick={(e) => setSettingsAnchor(e.currentTarget)} sx={{ color: "text.primary", transition: "transform 0.3s ease", "&:hover": { transform: "rotate(90deg)" } }}>
-              <Settings size={20} />
-            </IconButton>
-            <Button
-              variant="contained"
-              startIcon={<Download size={18} />}
-              sx={{
-                background: primaryMain,
-                color: "primary.contrastText",
-                "&:hover": { filter: "brightness(0.9)" },
-              }}
-            >
-              Export log
-            </Button>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <IconButton onClick={toggleColorMode} sx={{ color: "text.primary", transition: "transform 0.3s ease", "&:hover": { transform: "rotate(30deg)" } }}>
+                {mode === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+              </IconButton>
+              <IconButton onClick={(e) => setSettingsAnchor(e.currentTarget)} sx={{ color: "text.primary", transition: "transform 0.3s ease", "&:hover": { transform: "rotate(90deg)" } }}>
+                <Settings size={20} />
+              </IconButton>
+            </Box>
           </Box>
         </Container>
       </Box>
