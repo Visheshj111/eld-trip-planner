@@ -1,17 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <circle cx="24" cy="24" r="24" fill="#1a1a1a"/>
-  <g transform="translate(10, 14)" fill="white">
+  <g transform="translate(4, 12) scale(1.1)" fill="white">
     <!-- Truck cab -->
-    <rect x="16" y="4" width="12" height="12" rx="1.5"/>
-    <path d="M28 8h3.5c.8 0 1.5.4 1.9 1l2.1 3c.3.4.5.9.5 1.4V16h-8V8z"/>
+    <rect x="18" y="4" width="12" height="12" rx="1.5"/>
+    <path d="M30 8h3.5c.8 0 1.5.4 1.9 1l2.1 3c.3.4.5.9.5 1.4V16h-8V8z"/>
     <!-- Truck body -->
-    <rect x="0" y="2" width="17" height="14" rx="1.5"/>
+    <rect x="0" y="2" width="19" height="14" rx="1.5"/>
     <!-- Wheels -->
-    <circle cx="8" cy="18" r="3" fill="#1a1a1a"/>
-    <circle cx="8" cy="18" r="1.5" fill="white"/>
-    <circle cx="30" cy="18" r="3" fill="#1a1a1a"/>
-    <circle cx="30" cy="18" r="1.5" fill="white"/>
+    <circle cx="9" cy="18" r="3.5" fill="#1a1a1a"/>
+    <circle cx="9" cy="18" r="1.5" fill="white"/>
+    <circle cx="31" cy="18" r="3.5" fill="#1a1a1a"/>
+    <circle cx="31" cy="18" r="1.5" fill="white"/>
     <!-- Undercarriage line -->
-    <rect x="11" y="16.5" width="16" height="1.5" fill="white" rx="0.5"/>
+    <rect x="13" y="16.5" width="14" height="1.5" fill="white" rx="0.5"/>
   </g>
 </svg>
