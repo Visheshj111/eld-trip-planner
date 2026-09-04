@@ -208,11 +208,12 @@ export default function TripForm({ onSubmit, loading, onDriverChange, spotlight 
         </AccordionSummary>
         <AccordionDetails sx={{ pt: 0 }}>
           <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box sx={{ position: "absolute", left: 15, top: 24, bottom: 24, width: 2, bgcolor: "divider", zIndex: 0 }} />
-
             <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
-              <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: primaryMuted, color: primaryMain }}>
-                <Navigation size={16} />
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: primaryMuted, color: primaryMain }}>
+                  <Navigation size={16} />
+                </Box>
+                <Box sx={{ position: "absolute", top: 40, bottom: -16, width: 2, bgcolor: "divider", zIndex: 0 }} />
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography sx={FIELD_LABEL_SX}>Current location</Typography>
@@ -230,8 +231,11 @@ export default function TripForm({ onSubmit, loading, onDriverChange, spotlight 
             </Box>
 
             <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
-              <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: emeraldBg, color: emerald }}>
-                <MapPin size={16} />
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: emeraldBg, color: emerald }}>
+                  <MapPin size={16} />
+                </Box>
+                <Box sx={{ position: "absolute", top: 40, bottom: -16, width: 2, bgcolor: "divider", zIndex: 0 }} />
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography sx={FIELD_LABEL_SX}>Pickup location</Typography>
@@ -249,8 +253,10 @@ export default function TripForm({ onSubmit, loading, onDriverChange, spotlight 
             </Box>
 
             <Box sx={{ display: "flex", gap: 1.5, position: "relative", zIndex: 1 }}>
-              <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: isDark ? "rgba(220, 38, 38, 0.2)" : "rgba(220, 38, 38, 0.08)", color: "#DC2626" }}>
-                <Flag size={16} />
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                <Box sx={{ ...ICON_CIRCLE_BASE, bgcolor: isDark ? "rgba(220, 38, 38, 0.2)" : "rgba(220, 38, 38, 0.08)", color: "#DC2626" }}>
+                  <Flag size={16} />
+                </Box>
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography sx={FIELD_LABEL_SX}>Dropoff location</Typography>

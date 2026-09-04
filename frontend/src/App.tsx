@@ -298,7 +298,7 @@ export default function App() {
                 <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: "1rem", color: "text.primary" }}>No log sheet generated yet</Typography>
                 <Typography sx={{ fontSize: "0.8125rem", color: "text.secondary", textAlign: "center", maxWidth: 380, display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap", gap: 0.75, lineHeight: 2.2 }}>
                   Enter your route details and click 
-                  <Box component="span" onClick={handleSpotlight} sx={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 0.75, bgcolor: primaryMain, color: "white", borderRadius: 1.5, px: 1.25, py: 0.25, fontWeight: 600, fontSize: "0.75rem", fontFamily: "'Outfit', sans-serif", boxShadow: `0 2px 4px ${primaryMuted}`, transition: "transform 0.2s ease", "&:hover": { transform: "scale(1.05)" } }}>
+                  <Box component="span" onClick={handleSpotlight} sx={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 0.75, bgcolor: primaryMain, color: theme.palette.primary.contrastText, borderRadius: 1.5, px: 1.25, py: 0.25, fontWeight: 600, fontSize: "0.75rem", fontFamily: "'Outfit', sans-serif", boxShadow: `0 2px 4px ${primaryMuted}`, transition: "transform 0.2s ease", "&:hover": { transform: "scale(1.05)" } }}>
                     <Route size={14} /> Plan Trip
                   </Box> 
                   to generate a fully compliant ELD daily log.
