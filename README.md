@@ -1,6 +1,6 @@
 # ELD Trip Planner 🚛
 
-A full-stack trip planning tool for truck drivers that generates FMCSA-compliant Hours of Service (HOS) logs. You enter where you are, where you're picking up, and where you're dropping off — the app calculates the full route, figures out when you legally need to stop (rest breaks, fuel stops, the works), and renders proper ELD-style daily log sheets you'd actually recognize from the real thing.
+A full-stack trip planning tool for truck drivers that generates FMCSA-compliant Hours of Service (HOS) logs. You enter where you are, where you're picking up, and where you're dropping off. The app calculates the full route, figures out when you legally need to stop (rest breaks, fuel stops, the works), and renders proper ELD-style daily log sheets you'd actually recognize from the real thing.
 
 Built with **React + Material UI** on the frontend and **Django REST Framework** on the backend.
 
@@ -12,11 +12,11 @@ Built with **React + Material UI** on the frontend and **Django REST Framework**
 
 **The longer version:**
 
-- **Route Calculation** — Uses OpenRouteService to compute actual driving routes between your current location → pickup → dropoff. Not straight lines; real roads.
-- **HOS Engine** — A from-scratch Python state machine that enforces FMCSA 70-hour/8-day rules: 11-hour driving limits, 14-hour windows, mandatory 30-minute breaks, 10-hour rest periods, fuel stops every ~1000 miles, and 34-hour restarts when the cycle runs out.
-- **ELD Log Sheets** — The frontend renders SVG-based daily log grids that look like the real FMCSA Form 395 paper logs. Each day shows the four duty statuses (Off Duty, Sleeper Berth, Driving, On Duty) with proper horizontal bars and vertical transitions.
-- **Interactive Map** — Leaflet map with the full route polyline, color-coded markers for every stop (fuel, rest, pickup, dropoff), and switchable tile layers (street, satellite, terrain).
-- **Multi-Day Support** — Long hauls automatically split across multiple days with proper continuation logic. Day 2 picks up exactly where Day 1 left off.
+- **Route Calculation**: Uses OpenRouteService to compute actual driving routes between your current location, pickup, and dropoff. Not straight lines; real roads.
+- **HOS Engine**: A from-scratch Python state machine that enforces FMCSA 70-hour/8-day rules: 11-hour driving limits, 14-hour windows, mandatory 30-minute breaks, 10-hour rest periods, fuel stops every ~1000 miles, and 34-hour restarts when the cycle runs out.
+- **ELD Log Sheets**: The frontend renders SVG-based daily log grids that look like the real FMCSA Form 395 paper logs. Each day shows the four duty statuses (Off Duty, Sleeper Berth, Driving, On Duty) with proper horizontal bars and vertical transitions.
+- **Interactive Map**: Leaflet map with the full route polyline, color-coded markers for every stop (fuel, rest, pickup, dropoff), and switchable tile layers (street, satellite, terrain).
+- **Multi-Day Support**: Long hauls automatically split across multiple days with proper continuation logic. Day 2 picks up exactly where Day 1 left off.
 
 ---
 
@@ -131,7 +131,7 @@ Returns route geometry, daily log events, map stop markers, and HOS totals.
 
 ### `GET /api/health/`
 
-Health check. Returns `{"status": "ok"}`. No external API calls, no cache writes — safe for uptime monitoring.
+Health check. Returns `{"status": "ok"}`. No external API calls, no cache writes. Safe for uptime monitoring.
 
 ---
 
@@ -139,13 +139,13 @@ Health check. Returns `{"status": "ok"}`. No external API calls, no cache writes
 
 The engine follows FMCSA Part 395 regulations for property-carrying drivers:
 
-- **11-Hour Driving Limit** — Max 11 hours of driving after 10 consecutive hours off duty
-- **14-Hour Window** — Can't drive beyond the 14th hour after coming on duty
-- **30-Minute Break** — Required after 8 cumulative hours of driving
-- **10-Hour Rest** — 8 hours sleeper berth + 2 hours off duty
-- **70-Hour/8-Day Limit** — No driving after 70 hours on duty in 8 consecutive days
-- **34-Hour Restart** — Resets the 70-hour clock
-- **Fuel Stops** — Every ~1,000 miles, with 1-hour on-duty time for fueling
+- **11-Hour Driving Limit**: Max 11 hours of driving after 10 consecutive hours off duty
+- **14-Hour Window**: Can't drive beyond the 14th hour after coming on duty
+- **30-Minute Break**: Required after 8 cumulative hours of driving
+- **10-Hour Rest**: 8 hours sleeper berth + 2 hours off duty
+- **70-Hour/8-Day Limit**: No driving after 70 hours on duty in 8 consecutive days
+- **34-Hour Restart**: Resets the 70-hour clock
+- **Fuel Stops**: Every ~1,000 miles, with 1-hour on-duty time for fueling
 
 ---
 
@@ -189,12 +189,12 @@ eld-trip-planner/
 
 ## Notable Details
 
-- **Caching** — Route and geocoding results are cached in Django's LocMemCache so repeated queries don't burn ORS quota.
-- **Unit Switching** — Toggle between miles and kilometers from the settings panel. The ELD log sheets update in real-time.
-- **Theme System** — Light/dark mode with multiple accent color presets (teal, blue, amber, rose, violet). Persisted in localStorage.
-- **Driver Details** — Name, tractor number, and trailer info entered in the form sync live into the SVG log sheet header.
-- **Responsive Loading** — 29 rotating trucker-themed messages while the backend crunches the route ("Fueling up the rig...", "Tuning the CB radio...", etc.)
-- **Production-Ready Settings** — `DEBUG`, `SECRET_KEY`, and `ALLOWED_HOSTS` all read from environment variables with secure fallback defaults (fails closed, not open).
+- **Caching**: Route and geocoding results are cached in Django's LocMemCache so repeated queries don't burn ORS quota.
+- **Unit Switching**: Toggle between miles and kilometers from the settings panel. The ELD log sheets update in real-time.
+- **Theme System**: Light/dark mode with multiple accent color presets (teal, blue, amber, rose, violet). Persisted in localStorage.
+- **Driver Details**: Name, tractor number, and trailer info entered in the form sync live into the SVG log sheet header.
+- **Responsive Loading**: 29 rotating trucker-themed messages while the backend crunches the route ("Fueling up the rig...", "Tuning the CB radio...", etc.)
+- **Production-Ready Settings**: `DEBUG`, `SECRET_KEY`, and `ALLOWED_HOSTS` all read from environment variables with secure fallback defaults (fails closed, not open).
 
 ---
 
